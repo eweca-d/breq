@@ -4,6 +4,9 @@ brec/
 # idea
 .idea/
 
+# working dir
+monitor/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

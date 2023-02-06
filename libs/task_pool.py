@@ -53,6 +53,9 @@ class TaskPool:
             if priority < self.working_rids[-1][0]:
                 self.stop_task(self.working_rids[-1][1], new_rid=rid, finished=False)
 
+        print('register task', rid)
+        self.show_task_pool()
+
     def run_existing_task(self, rid: Optional[int]):
         if rid is not None:
             # 直接执行新任务
@@ -82,7 +85,7 @@ class TaskPool:
     def stop_task(self, rid: int, new_rid: int = None, finished: bool = True):
         """
         condition 0：停止的任务是正在执行的任务
-        停止任务 -> 清除任务痕迹 -> 开启一个新的已有任务 -> 若finished = False，则将停止的任务重新加入任务池
+        停止任务 -> 开启一个新的已有任务 -> 清除任务痕迹 -> 若finished = False，则将停止的任务重新加入任务池
         condition 1：停止的任务是未执行的任务
         停止任务 -> 清除任务痕迹 -> 若finished = False，则将停止的任务重新加入任务池
         """
@@ -92,19 +95,23 @@ class TaskPool:
 
         self.task_pool[task_id][3].put('stop')
 
+        if rid in [x[1] for x in self.working_rids]:
+            # start an existing task
+            self.run_existing_task(new_rid)
+
         # record context
         st_priority, _, _, _, st_cmd = self.task_pool[task_id]
 
         self.task_pool[task_id] = None
         self.working_rids = list(filter(lambda x: x[1] != rid, self.working_rids))
 
-        if rid in [x[1] for x in self.working_rids]:
-            # start an existing task
-            self.run_existing_task(new_rid)
-
         # place stop task at the end of the list
         if not finished:
             self.register_cli_task(st_cmd, rid, st_priority)
+
+        if finished:
+            print('task', rid, 'finished')
+            self.show_task_pool()
 
 
 if __name__ == '__main__':
